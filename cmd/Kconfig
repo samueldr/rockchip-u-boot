@@ -205,7 +205,7 @@ config CMD_BOOTEFI
 
 config CMD_BOOTEFI_HELLO_COMPILE
 	bool "Compile a standard EFI hello world binary for testing"
-	depends on CMD_BOOTEFI && (ARM || X86)
+	depends on CMD_BOOTEFI && (ARM || X86 || RISCV)
 	default y
 	help
 	  This compiles a standard EFI hello world application with U-Boot so
@@ -224,6 +224,8 @@ config CMD_BOOTEFI_HELLO
 	  it can be used with the 'bootefi hello' command. This is useful
 	  for testing that EFI is working at a basic level, and for bringing
 	  up EFI support on a new architecture.
+
+source lib/efi_selftest/Kconfig
 
 config CMD_BOOTMENU
 	bool "bootmenu"

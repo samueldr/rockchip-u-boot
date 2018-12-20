@@ -24,6 +24,11 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+/*
+ * GUID for basic data partions.
+ */
+static const efi_guid_t partition_basic_data_guid = PARTITION_BASIC_DATA_GUID;
+
 #ifdef HAVE_BLOCK_DEVICE
 /**
  * efi_crc32() - EFI version of crc32 function
@@ -67,9 +72,21 @@ static efi_guid_t system_guid = PARTITION_SYSTEM_GUID;
 
 static inline int is_bootable(gpt_entry *p)
 {
+    /*
+	unsigned char *uuid_bin;
+	char uuid[UUID_STR_LEN + 1];
+    uuid_bin = (unsigned char *)system_guid.b;
+    uuid_bin_to_str(uuid_bin, uuid, UUID_STR_FORMAT_GUID);
+    printf("================== \ttype:\t%s\n", uuid);
+
+    uuid_bin = (unsigned char *)p->partition_type_guid.b;
+    uuid_bin_to_str(uuid_bin, uuid, UUID_STR_FORMAT_GUID);
+    printf("================== \ttype:\t%s\n", uuid);
+    */
+
 	return p->attributes.fields.legacy_bios_bootable ||
 		!memcmp(&(p->partition_type_guid), &system_guid,
-			sizeof(efi_guid_t));
+			sizeof(efi_guid_t)) || !strcmp("boot", print_efiname(p)); 
 }
 
 static int validate_gpt_header(gpt_header *gpt_h, lbaint_t lba,
@@ -511,12 +528,12 @@ int gpt_fill_pte(struct blk_desc *dev_desc,
 		} else {
 			/* default partition type GUID */
 			memcpy(bin_type_guid,
-			       &PARTITION_BASIC_DATA_GUID, 16);
+			       &partition_basic_data_guid, 16);
 		}
 #else
 		/* partition type GUID */
 		memcpy(gpt_e[i].partition_type_guid.b,
-			&PARTITION_BASIC_DATA_GUID, 16);
+			&partition_basic_data_guid, 16);
 #endif
 
 #if CONFIG_IS_ENABLED(PARTITION_UUIDS)

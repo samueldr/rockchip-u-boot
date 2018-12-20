@@ -38,6 +38,7 @@ enum if_type {
 	IF_TYPE_SPINAND,
 	IF_TYPE_SPINOR,
 	IF_TYPE_RAMDISK,
+	IF_TYPE_EFI,
 
 	IF_TYPE_COUNT,			/* Number of interface types */
 };
@@ -89,6 +90,7 @@ struct blk_desc {
 		uint32_t mbr_sig;	/* MBR integer signature */
 		efi_guid_t guid_sig;	/* GPT GUID Signature */
 	};
+	void *if_device;
 #if CONFIG_IS_ENABLED(BLK)
 	/*
 	 * For now we have a few functions which take struct blk_desc as a
