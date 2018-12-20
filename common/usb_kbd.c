@@ -520,6 +520,7 @@ static int probe_usb_keyboard(struct usb_device *dev)
 	error = iomux_doenv(stdin, stdinname);
 	if (error)
 		return error;
+    iomux_printdevs(stdin);
 #else
 	/* Check if this is the standard input device. */
 	if (strcmp(stdinname, DEVNAME))

@@ -791,8 +791,25 @@ int console_init_r(void)
 	stdinname  = env_get("stdin");
 	stdoutname = env_get("stdout");
 	stderrname = env_get("stderr");
+	//stdoutname = "serial";
+	//stderrname = "serial";
 
 	if (OVERWRITE_CONSOLE == 0) {	/* if not overwritten by config switch */
+/*
+如果不设置stdin环境变量，那么执行下面的iomux_doenv就会报错，然后转而执行下面的
+		inputdev  = search_device(DEV_FLAGS_INPUT,  "serial");
+		outputdev = search_device(DEV_FLAGS_OUTPUT, "serial");
+		errdev    = search_device(DEV_FLAGS_OUTPUT, "serial");
+从而把stdin stderr stdout都设置位serial.
+
+把
+		"stdin=serial,usbkbd\0" \
+		"stdout=serial,vidconsole\0" \
+		"stderr=serial,vidconsole\0"
+执行这些操作，search_device(DEV_FLAGS_INPUT,  stdinname);都会找不到设备
+但是, iomux_doenv不会出错，而且iomux_doenv中会执行vidconsole设备驱动的probe
+从而点亮屏，显示logo, 把stdout stderr设为vidconsole,导致serial不能输入
+*/
 		inputdev  = search_device(DEV_FLAGS_INPUT,  stdinname);
 		outputdev = search_device(DEV_FLAGS_OUTPUT, stdoutname);
 		errdev    = search_device(DEV_FLAGS_OUTPUT, stderrname);

@@ -17,6 +17,7 @@
 #include <malloc.h>
 #include <stdio_dev.h>
 #include <serial.h>
+#include <usb.h>
 
 #if defined(CONFIG_SYS_I2C)
 #include <i2c.h>
@@ -354,12 +355,13 @@ int stdio_add_devices(void)
 	 * So just probe all video devices now so that whichever one is
 	 * required will be available.
 	 */
+
+    stdio_probe_device("vidconsole", UCLASS_VIDEO, NULL);
 #ifndef CONFIG_SYS_CONSOLE_IS_IN_ENV
 	struct udevice *vdev;
 # ifndef CONFIG_DM_KEYBOARD
 	int ret;
 # endif
-
 	for (ret = uclass_first_device(UCLASS_VIDEO, &vdev);
 	     vdev;
 	     ret = uclass_next_device(&vdev))
@@ -378,6 +380,16 @@ int stdio_add_devices(void)
 #if defined(CONFIG_KEYBOARD) && !defined(CONFIG_DM_KEYBOARD)
 	drv_keyboard_init ();
 #endif
+/*
+for it takes a long time, so move to board_late_int, after show logo
+
+# ifdef CONFIG_USB_KEYBOARD
+    usb_init();
+#ifndef CONFIG_DM_USB
+    drv_usb_kbd_init();
+#endif
+#endif
+*/
 	drv_system_init ();
 	serial_stdio_init ();
 #ifdef CONFIG_USB_TTY
