@@ -970,6 +970,7 @@ static void usb_stor_set_max_xfer_blk(struct usb_device *udev,
 #endif
 
 	us->max_xfer_blk = blk;
+	us->max_xfer_blk = 2000;
 }
 
 static int usb_inquiry(struct scsi_cmd *srb, struct us_data *ss)
