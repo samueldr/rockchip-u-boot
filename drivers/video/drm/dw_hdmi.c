@@ -2256,6 +2256,8 @@ int rockchip_dw_hdmi_init(struct display_state *state)
 		return -ENXIO;
 	}
 
+	dw_hdmi_set_iomux(hdmi->grf, hdmi->dev_type);
+
 	dw_hdmi_set_reg_wr(hdmi);
 
 	if (pdata->grf_vop_sel_reg) {
@@ -2299,7 +2301,6 @@ int rockchip_dw_hdmi_init(struct display_state *state)
 	hdmi->sample_rate = 48000;
 
 	conn_state->private = hdmi;
-	dw_hdmi_set_iomux(hdmi->grf, hdmi->dev_type);
 	dw_hdmi_detect_phy(hdmi);
 	dw_hdmi_dev_init(hdmi);
 

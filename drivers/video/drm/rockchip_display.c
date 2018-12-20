@@ -21,6 +21,7 @@
 #include <dm/device.h>
 #include <dm/uclass-internal.h>
 #include <asm/arch-rockchip/resource_img.h>
+#include <mapmem.h>
 
 #include "bmp_helper.h"
 #include "rockchip_display.h"
@@ -31,6 +32,7 @@
 #include <dm.h>
 #include <dm/of_access.h>
 #include <dm/ofnode.h>
+#include "logo.h"
 
 #define DRIVER_VERSION	"v1.0.0"
 
@@ -49,6 +51,7 @@ static LIST_HEAD(logo_cache_list);
 
 static unsigned long memory_start;
 static unsigned long memory_end;
+static unsigned long memory_base;
 
 /*
  * the phy types are used by different connectors in public.
@@ -107,7 +110,7 @@ static int get_public_phy(struct display_state *state,
 		ret = -EINVAL;
 #endif
 		if (ret) {
-			printf("Warn: can't find phy driver\n");
+            printf(" %d Warn: can't find phy driver\n", __LINE__);
 			return 0;
 		}
 
@@ -139,6 +142,7 @@ static int get_public_phy(struct display_state *state,
 
 static void init_display_buffer(ulong base)
 {
+    memory_base = base;
 	memory_start = base + DRM_ROCKCHIP_FB_SIZE;
 	memory_end = memory_start;
 }
@@ -265,7 +269,7 @@ static int connector_phy_init(struct display_state *state,
 	ret = uclass_get_device_by_phandle(UCLASS_PHY, conn_state->dev, "phys",
 					   &dev);
 	if (ret) {
-		printf("Warn: can't find phy driver\n");
+		printf(" %d Warn: can't find phy driver\n", __LINE__);
 		return 0;
 	}
 
@@ -685,12 +689,14 @@ static int display_init(struct display_state *state)
 		goto deinit;
 	}
 #endif
+
 	if (conn_funcs->detect) {
 		ret = conn_funcs->detect(state);
 #if defined(CONFIG_ROCKCHIP_DRM_TVE) || defined(CONFIG_ROCKCHIP_DRM_RK1000)
 		if (conn_state->type == DRM_MODE_CONNECTOR_HDMIA)
 			crtc->hdmi_hpd = ret;
 #endif
+            mdelay(200);
 		if (!ret)
 			goto deinit;
 	}
@@ -779,7 +785,7 @@ static int display_panel_enable(struct display_state *state)
 
 	if (!panel || !panel->funcs || !panel->funcs->enable) {
 		printf("%s: failed to find panel enable funcs\n", __func__);
-		return -ENODEV;
+		return 0;
 	}
 
 	return panel->funcs->enable(state);
@@ -906,68 +912,68 @@ static int display_disable(struct display_state *state)
 	return 0;
 }
 
-static int display_logo(struct display_state *state)
+int display_fullscreen_update(struct display_state *state, ulong fbbase)
 {
 	struct crtc_state *crtc_state = &state->crtc_state;
 	struct connector_state *conn_state = &state->conn_state;
-	struct logo_info *logo = &state->logo;
 	int hdisplay, vdisplay;
 
 	display_init(state);
 	if (!state->is_init)
 		return -ENODEV;
 
-	switch (logo->bpp) {
-	case 16:
-		crtc_state->format = ROCKCHIP_FMT_RGB565;
-		break;
-	case 24:
-		crtc_state->format = ROCKCHIP_FMT_RGB888;
-		break;
-	case 32:
-		crtc_state->format = ROCKCHIP_FMT_ARGB8888;
-		break;
-	default:
-		printf("can't support bmp bits[%d]\n", logo->bpp);
-		return -EINVAL;
-	}
-	crtc_state->rb_swap = logo->bpp != 32;
+    crtc_state->format = ROCKCHIP_FMT_RGB565;
+	crtc_state->rb_swap = true;
 	hdisplay = conn_state->mode.hdisplay;
 	vdisplay = conn_state->mode.vdisplay;
-	crtc_state->src_w = logo->width;
-	crtc_state->src_h = logo->height;
+	crtc_state->src_w = hdisplay;
+	crtc_state->src_h = vdisplay;
 	crtc_state->src_x = 0;
 	crtc_state->src_y = 0;
-	crtc_state->ymirror = logo->ymirror;
+	crtc_state->ymirror = 0;
 
-	crtc_state->dma_addr = (u32)(unsigned long)logo->mem + logo->offset;
-	crtc_state->xvir = ALIGN(crtc_state->src_w * logo->bpp, 32) >> 5;
+	crtc_state->dma_addr = (u32)fbbase;
+	crtc_state->xvir = ALIGN(crtc_state->src_w * 16, 32) >> 5;
 
-	if (logo->mode == ROCKCHIP_DISPLAY_FULLSCREEN) {
-		crtc_state->crtc_x = 0;
-		crtc_state->crtc_y = 0;
-		crtc_state->crtc_w = hdisplay;
-		crtc_state->crtc_h = vdisplay;
-	} else {
-		if (crtc_state->src_w >= hdisplay) {
-			crtc_state->crtc_x = 0;
-			crtc_state->crtc_w = hdisplay;
-		} else {
-			crtc_state->crtc_x = (hdisplay - crtc_state->src_w) / 2;
-			crtc_state->crtc_w = crtc_state->src_w;
-		}
-
-		if (crtc_state->src_h >= vdisplay) {
-			crtc_state->crtc_y = 0;
-			crtc_state->crtc_h = vdisplay;
-		} else {
-			crtc_state->crtc_y = (vdisplay - crtc_state->src_h) / 2;
-			crtc_state->crtc_h = crtc_state->src_h;
-		}
-	}
+    crtc_state->crtc_x = 0;
+    crtc_state->crtc_y = 0;
+    crtc_state->crtc_w = hdisplay;
+    crtc_state->crtc_h = vdisplay;
 
 	display_set_plane(state);
-	display_enable(state);
+    display_enable(state);
+
+	return 0;
+}
+
+static int display_logo(struct display_state *state)
+{
+	struct connector_state *conn_state = &state->conn_state;
+	struct logo_info *logo = &state->logo;
+	int hdisplay;
+    int vdisplay;
+    int i;
+
+    printf("%s %d \n", __FUNCTION__,__LINE__);
+	//return 0;
+
+	//display_init(state);
+	//if (!state->is_init)
+		//return -ENODEV;
+
+	hdisplay = conn_state->mode.hdisplay;
+	vdisplay = conn_state->mode.vdisplay;
+
+    int Bpp = logo->bpp >> 3;
+    int startY = (vdisplay - logo->height) / 2;
+
+    for (i=0; i<logo->height; i++) {
+        memcpy(state->mem_base + (hdisplay * (i + startY) + (hdisplay - logo->width) / 2) * Bpp,  
+        logo->mem + logo->offset + (logo->width * i)*Bpp,  (logo->width) * Bpp);
+    }
+
+	//display_set_plane(state);
+	//display_enable(state);
 
 	return 0;
 }
@@ -1090,7 +1096,7 @@ static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 	struct rockchip_logo_cache *logo_cache;
 	struct bmp_header *header;
 	void *dst = NULL, *pdst;
-	int size, len;
+	int size;
 	int ret = 0;
 
 	if (!logo || !bmp_name)
@@ -1104,6 +1110,7 @@ static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 		return 0;
 	}
 
+/*
 	header = malloc(RK_BLK_SIZE);
 	if (!header)
 		return -ENOMEM;
@@ -1113,6 +1120,8 @@ static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 		ret = -EINVAL;
 		goto free_header;
 	}
+*/
+	header = (struct bmp_header *)logo_bmp;
 
 	logo->bpp = get_unaligned_le16(&header->bit_count);
 	logo->width = get_unaligned_le32(&header->width);
@@ -1131,12 +1140,15 @@ static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 		dst = pdst;
 	}
 
+	pdst = (void*)logo_bmp;
+	/*
 	len = rockchip_read_resource_file(pdst, bmp_name, 0, size);
 	if (len != size) {
 		printf("failed to load bmp %s\n", bmp_name);
 		ret = -ENOENT;
 		goto free_header;
 	}
+	*/
 
 	if (!can_direct_logo(logo->bpp)) {
 		int dst_size;
@@ -1172,7 +1184,7 @@ static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 
 free_header:
 
-	free(header);
+	//free(header);
 
 	return ret;
 #else
@@ -1192,7 +1204,14 @@ void rockchip_show_fbbase(ulong fbbase)
 		s->logo.bpp = 32;
 		s->logo.ymirror = 0;
 
-		display_logo(s);
+		s->logo.mode = s->logo_mode;
+		if (load_bmp_logo(&s->logo, s->ulogo_name))
+			printf("failed to display uboot logo\n");
+		else
+        {
+			printf("display uboot logo\n");
+			display_logo(s);
+        }
 	}
 }
 
@@ -1372,6 +1391,7 @@ static int rockchip_display_probe(struct udevice *dev)
 		s->crtc_state.crtc = crtc;
 		s->crtc_state.crtc_id = get_crtc_id(np_to_ofnode(ep_node));
 		s->node = node;
+        s->mem_base = (void *)plat->base;
 		get_crtc_mcu_mode(&s->crtc_state);
 
 		if (connector_panel_init(s)) {
@@ -1397,10 +1417,62 @@ static int rockchip_display_probe(struct udevice *dev)
 	uc_priv->ysize = DRM_ROCKCHIP_FB_HEIGHT;
 	uc_priv->bpix = VIDEO_BPP32;
 
-	#ifdef CONFIG_DRM_ROCKCHIP_VIDEO_FRAMEBUFFER
-	rockchip_show_fbbase(plat->base);
+	//rockchip_show_fbbase(plat->base);   //here show logo
+	//video_set_flush_dcache(dev, true);
+    //mdelay(10000);
+
+    //TODO clear screen
+
+    s = list_first_entry(&rockchip_display_list, struct display_state, head);
+    printf(" %d %d %d \n", s->logo.width, s->logo.height, s->logo.bpp);
+
+    {
+        //struct connector_state *conn_state = s.conn_state;
+        //uc_priv->xsize = s->conn_state.mode.hdisplay;
+        //uc_priv->ysize = s->conn_state.mode.vdisplay;
+
+        //plat->base = (ulong)(s->logo.mem) + (ulong)(s->logo.offset);
+        //uc_priv->xsize = s->logo.width;
+        //uc_priv->ysize = s->logo.height;
+        display_fullscreen_update(s, plat->base);
+
+        uc_priv->xsize = s->conn_state.mode.hdisplay;
+        uc_priv->ysize = s->conn_state.mode.vdisplay;
+        uc_priv->bpix = VIDEO_BPP16;
+
+/*
+		s->logo.mode = ROCKCHIP_DISPLAY_FULLSCREEN;
+		s->logo.mem = (void *)plat->base;
+		s->logo.width = DRM_ROCKCHIP_FB_WIDTH;
+		s->logo.height = DRM_ROCKCHIP_FB_HEIGHT;
+		s->logo.bpp = 32;
+		s->logo.ymirror = 0;
+		s->logo.mode = s->logo_mode;
+*/
+/*
+		if (load_bmp_logo(&s->logo, s->ulogo_name))
+			printf("failed to display uboot logo\n");
+		else
+        {
+			printf("display uboot logo\n");
+			display_logo(s);
+        }
+*/
+    }
 	video_set_flush_dcache(dev, true);
-	#endif
+
+
+    //mdelay(10000);
+#if 0
+	//priv->fb = map_sysmem(plat->base, plat->size);
+    //plat->base = (ulong)(s->logo.mem) + (ulong)(s->logo.offset);
+
+    uc_priv->xsize = s->logo.width;
+    uc_priv->ysize = s->logo.height;
+    uc_priv->bpix = s->logo.bpp;
+#endif
+
+    //uc_priv->fb = map_sysmem((ulong)(s->logo.mem + s->logo.offset), VNBYTES(DRM_ROCKCHIP_FB_BPP) * uc_priv->xsize * uc_priv->ysize + MEMORY_POOL_SIZE);
 
 	return 0;
 }
@@ -1418,13 +1490,14 @@ void rockchip_display_fixup(void *blob)
 
 	if (!get_display_size())
 		return;
+	return;
 
 	if (fdt_node_offset_by_compatible(blob, 0, "rockchip,drm-logo") >= 0) {
-		list_for_each_entry(s, &rockchip_display_list, head)
-			load_bmp_logo(&s->logo, s->klogo_name);
+		//list_for_each_entry(s, &rockchip_display_list, head)
+			//load_bmp_logo(&s->logo, s->klogo_name);
 		offset = fdt_update_reserved_memory(blob, "rockchip,drm-logo",
-						    (u64)memory_start,
-						    (u64)get_display_size());
+						    (u64)memory_base,
+						    DRM_ROCKCHIP_FB_SIZE);
 		if (offset < 0)
 			printf("failed to reserve drm-loader-logo memory\n");
 	} else {
@@ -1473,11 +1546,10 @@ void rockchip_display_fixup(void *blob)
 #define FDT_SET_U32(name, val) \
 		do_fixup_by_path_u32(blob, path, name, val, 1);
 
-		offset = s->logo.offset + (u32)(unsigned long)s->logo.mem
-			 - memory_start;
+        offset = 0;
 		FDT_SET_U32("logo,offset", offset);
-		FDT_SET_U32("logo,width", s->logo.width);
-		FDT_SET_U32("logo,height", s->logo.height);
+		FDT_SET_U32("logo,width", s->conn_state.mode.hdisplay);
+		FDT_SET_U32("logo,height",s->conn_state.mode.vdisplay);
 		FDT_SET_U32("logo,bpp", s->logo.bpp);
 		FDT_SET_U32("logo,ymirror", s->logo.ymirror);
 		FDT_SET_U32("video,hdisplay", s->conn_state.mode.hdisplay);

@@ -660,6 +660,7 @@ void drm_rk_selete_output(struct hdmi_edid_data *edid_data,
 	else
 		*bus_format = MEDIA_BUS_FMT_YUV8_1X24;
 
+	return;
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
 		printf("%s: Could not find device\n", __func__);
@@ -741,6 +742,14 @@ void dw_hdmi_set_iomux(void *grf, int dev_type)
 		writel(RK3228_IO_3V_DOMAIN, grf + RK3228_GRF_SOC_CON6);
 		writel(RK3228_IO_DDC_IN_MSK, grf + RK3228_GRF_SOC_CON2);
 		break;
+    case RK3399_HDMI:
+         #define GRF_GPIO4C_IOMUX        0xe028
+		writel((3 << 30) | (3 << 18) | (3 << 16) | (1 << 14) | (3 << 2) | (3 << 0), grf + GRF_GPIO4C_IOMUX);
+        //struct rk3399_grf_regs * const grf = (void *)grf;
+        //rk_setreg(&grf->gpio4c_iomux, (3 << 30) | (3 << 18) | (3 << 16) | (1 << 14) | (3 << 2) | (3 << 0))
+		//grf_writel((3 << 30) | (3 << 18) | (3 << 16) | (1 << 14) | (3 << 2) | (3 << 0), GRF_GPIO4C_IOMUX);
+        break;
+        
 	default:
 		break;
 	}
