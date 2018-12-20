@@ -10,6 +10,10 @@
 #include <attestation_key.h>
 #include <boot_rkimg.h>
 #include <optee_include/OpteeClientInterface.h>
+#include <dm/device.h>
+#include <dm/of.h>
+#include <dm/ofnode.h>
+#include <usb.h>
 
 #define OEM_UNLOCK_ARG_SIZE 30
 
@@ -27,6 +31,24 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 	if (!dev_desc) {
 		printf("%s: dev_desc is NULL!\n", __func__);
 		return -ENODEV;
+	} else {
+		const char *bootdevnode;
+		char *bootargs;
+		char boot_options[128] = {0};
+
+		if (dev_desc->if_type == IF_TYPE_USB) {
+			struct udevice *udus_device;
+			udus_device = usb_get_bus(dev_desc->bdev);
+			bootdevnode = udus_device->node.np->full_name;
+		} else if (dev_desc->if_type == IF_TYPE_MMC) {
+			bootdevnode =  dev_desc->bdev->parent->node.np->full_name;
+		} else {
+			bootdevnode = "null";
+		}
+
+		bootargs = env_get("bootargs");
+		snprintf(boot_options, sizeof(boot_options),"%s bootdevnode=%s", bootargs,bootdevnode);
+		env_update("bootargs", boot_options);
 	}
 
 #ifdef CONFIG_OPTEE_CLIENT

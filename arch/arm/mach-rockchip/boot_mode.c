@@ -95,7 +95,8 @@ void devtype_num_envset(void)
 	ret = run_command_list(devtype_num_set, -1, 0);
 	if (ret) {
 		/* Set default dev type/num if command not valid */
-		env_set("devtype", "mmc");
+		printf("failed to get boot dev");
+		env_set("devtype", "usb");
 		env_set("devnum", "0");
 	}
 

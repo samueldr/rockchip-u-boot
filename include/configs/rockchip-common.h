@@ -92,7 +92,9 @@
 
 #define RKIMG_DET_BOOTDEV \
 	"rkimg_bootdev=" \
-	"if mmc dev 1 && rkimgtest mmc 1; then " \
+	"if usb dev 0; then " \
+		"setenv devtype usb; setenv devnum 0;" \
+	"elif mmc dev 1; then " \
 		"setenv devtype mmc; setenv devnum 1; echo Boot from SDcard;" \
 	"elif mmc dev 0; then " \
 		"setenv devtype mmc; setenv devnum 0;" \
@@ -105,8 +107,8 @@
 	"fi; \0"
 
 #define RKIMG_BOOTCOMMAND \
-	"boot_android ${devtype} ${devnum};" \
 	"bootrkp;" \
+	"boot_android ${devtype} ${devnum};" \
 	"run distro_bootcmd;"
 
 #endif

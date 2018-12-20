@@ -54,6 +54,7 @@
 #include <linux/compiler.h>
 #include <linux/err.h>
 #include <efi_loader.h>
+#include <usb.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -410,6 +411,16 @@ static int initr_nand(void)
 	return 0;
 }
 #endif
+
+#if 0
+static int initr_usb(void)
+{
+	puts("USB: ");
+	usb_init();
+	return 0;
+}
+#endif
+
 
 #if defined(CONFIG_CMD_ONENAND)
 /* go init the NAND */
@@ -801,6 +812,9 @@ static init_fnc_t init_sequence_r[] = {
 #endif
 #ifdef CONFIG_CMD_NAND
 	initr_nand,
+#endif
+#ifdef CONFIG_USB
+	//initr_usb,
 #endif
 #ifdef CONFIG_CMD_ONENAND
 	initr_onenand,

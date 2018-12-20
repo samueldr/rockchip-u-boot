@@ -34,6 +34,7 @@
 #include <mmc.h>
 #include <of_live.h>
 #include <dm/root.h>
+#include <usb.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 /* define serialno max length, the max length is 512 Bytes
@@ -152,10 +153,6 @@ __weak int set_armclk_rate(void)
 
 int board_late_init(void)
 {
-#if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
-	setup_boot_mode();
-#endif
-
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 	charge_display();
 #endif
@@ -163,6 +160,21 @@ int board_late_init(void)
 #ifdef CONFIG_DRM_ROCKCHIP
 	rockchip_show_logo();
 #endif
+
+#ifdef CONFIG_USB
+    usb_init();
+#endif
+
+#if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
+	setup_boot_mode();
+#endif
+
+# ifdef CONFIG_USB_KEYBOARD
+#ifndef CONFIG_DM_USB
+    drv_usb_kbd_init();
+#endif
+#endif
+
 	rockchip_set_serialno();
 
 	soc_clk_dump();

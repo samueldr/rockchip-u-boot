@@ -180,6 +180,9 @@ int get_bootdev_type(void)
 	} else if (!strcmp(devtype, "ramdisk")) {
 		type = IF_TYPE_RAMDISK;
 		boot_media = "ramdisk";
+	} else if (!strcmp(devtype, "usb")) {
+		type = IF_TYPE_USB;
+		boot_media = "usb";
 	} else {
 		/* Add new to support */
 	}
