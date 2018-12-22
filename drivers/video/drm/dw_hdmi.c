@@ -409,14 +409,14 @@ static int dw_hdmi_i2c_read(struct dw_hdmi *hdmi,
 		}
 
 		if (!interrupt) {
-			printf("[%s] i2c read reg[0x%02x] no interrupt\n",
+			debug("[%s] i2c read reg[0x%02x] no interrupt\n",
 			       __func__, i2c->slave_reg);
 			return -EAGAIN;
 		}
 
 		/* Check for error condition on the bus */
 		if (interrupt & HDMI_IH_I2CM_STAT0_ERROR) {
-			printf("[%s] read reg[0x%02x] data error:0x%02x\n",
+			debug("[%s] read reg[0x%02x] data error:0x%02x\n",
 			       __func__, i2c->slave_reg, interrupt);
 			return -EIO;
 		}

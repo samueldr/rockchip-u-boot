@@ -771,7 +771,7 @@ static int display_panel_prepare(struct display_state *state)
 	const struct rockchip_panel *panel = panel_state->panel;
 
 	if (!panel || !panel->funcs || !panel->funcs->prepare) {
-		printf("%s: failed to find panel prepare funcs\n", __func__);
+		debug("%s: failed to find panel prepare funcs\n", __func__);
 		return -ENODEV;
 	}
 
@@ -784,7 +784,7 @@ static int display_panel_enable(struct display_state *state)
 	const struct rockchip_panel *panel = panel_state->panel;
 
 	if (!panel || !panel->funcs || !panel->funcs->enable) {
-		printf("%s: failed to find panel enable funcs\n", __func__);
+		debug("%s: failed to find panel enable funcs\n", __func__);
 		return 0;
 	}
 
@@ -954,12 +954,11 @@ static int display_logo(struct display_state *state)
     int vdisplay;
     int i;
 
-    printf("%s %d \n", __FUNCTION__,__LINE__);
 	//return 0;
 
 	//display_init(state);
-	//if (!state->is_init)
-		//return -ENODEV;
+	if (!state->is_enable)
+		return -ENODEV;
 
 	hdisplay = conn_state->mode.hdisplay;
 	vdisplay = conn_state->mode.vdisplay;
@@ -1424,7 +1423,6 @@ static int rockchip_display_probe(struct udevice *dev)
     //TODO clear screen
 
     s = list_first_entry(&rockchip_display_list, struct display_state, head);
-    printf(" %d %d %d \n", s->logo.width, s->logo.height, s->logo.bpp);
 
     {
         //struct connector_state *conn_state = s.conn_state;
