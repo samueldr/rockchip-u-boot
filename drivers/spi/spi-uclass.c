@@ -250,7 +250,8 @@ int spi_find_bus_and_cs(int busnum, int cs, struct udevice **busp,
 	struct udevice *bus, *dev;
 	int ret;
 
-	ret = uclass_find_device_by_seq(UCLASS_SPI, busnum, false, &bus);
+	ret = uclass_first_device_err(UCLASS_SPI, &bus);
+	//ret = uclass_find_device_by_seq(UCLASS_SPI, busnum, false, &bus);
 	if (ret) {
 		debug("%s: No bus %d\n", __func__, busnum);
 		return ret;
@@ -274,11 +275,11 @@ int spi_get_bus_and_cs(int busnum, int cs, int speed, int mode,
 	struct dm_spi_slave_platdata *plat;
 	bool created = false;
 	int ret;
-
 #if CONFIG_IS_ENABLED(OF_PLATDATA)
 	ret = uclass_first_device_err(UCLASS_SPI, &bus);
 #else
-	ret = uclass_get_device_by_seq(UCLASS_SPI, busnum, &bus);
+	//ret = uclass_get_device_by_seq(UCLASS_SPI, busnum, &bus);
+	ret = uclass_first_device_err(UCLASS_SPI, &bus);
 #endif
 	if (ret) {
 		printf("Invalid bus %d (err=%d)\n", busnum, ret);

@@ -294,7 +294,7 @@ static int rockchip_sfc_dma_xfer(struct rockchip_sfc *sfc, void *buffer, size_t 
 	rockchip_sfc_setup_xfer(sfc, bb.len_aligned);
 
 	writel(0xFFFFFFFF, &regs->iclr);
-	writel((u32)bb.bounce_buffer, &regs->dmaaddr);
+	writel((unsigned long)bb.bounce_buffer, &regs->dmaaddr);
 	writel(SFC_DMA_START, &regs->dmatr);
 
 	tbase = get_timer(0);
