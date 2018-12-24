@@ -115,6 +115,16 @@
 		regulator-always-on;
 	};
 
+	vcc_hub_en: vcc_hub_en-regulator {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio2 RK_PA4 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&hub_rst_en>;
+		regulator-name = "vcc_hub_en";
+		regulator-always-on;
+	};
+
 	vcc5v0_sys: vcc5v0-sys {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc5v0_sys";
@@ -542,6 +552,11 @@
 	usb2 {
 		host_vbus_drv: host-vbus-drv {
 			rockchip,pins = <1 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		hub_rst_en: hub-rst-en {
+			rockchip,pins =
+				<2 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
