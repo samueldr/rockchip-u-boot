@@ -1488,7 +1488,6 @@ void rockchip_display_fixup(void *blob)
 
 	if (!get_display_size())
 		return;
-	return;
 
 	if (fdt_node_offset_by_compatible(blob, 0, "rockchip,drm-logo") >= 0) {
 		//list_for_each_entry(s, &rockchip_display_list, head)
@@ -1531,6 +1530,9 @@ void rockchip_display_fixup(void *blob)
 			printf("failed to get exist crtc\n");
 			continue;
 		}
+
+		if (!s->is_enable)
+			continue;
 
 		if (crtc_funcs->fixup_dts)
 			crtc_funcs->fixup_dts(s, blob);
