@@ -807,7 +807,6 @@ static int do_rename_gpt_parts(struct blk_desc *dev_desc, char *subcomm,
 	free(partitions_list);
 	return ret;
 }
-#endif
 
 static int do_set_boot_part_bootenable(struct blk_desc *dev_desc)
 {
@@ -984,6 +983,8 @@ static int do_set_boot_part_bootenable(struct blk_desc *dev_desc)
     return ret;
 #endif
 }
+
+#endif
 
 /**
  * do_gpt(): Perform GPT operations
