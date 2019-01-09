@@ -307,6 +307,7 @@ void board_run_recovery_wipe_data(void)
  * while 3th case is dynamically added by U-Boot code, so we have to check it
  * everytime.
  */
+ //mark
 int rockchip_get_boot_mode(void)
 {
 	struct blk_desc *dev_desc;
@@ -335,59 +336,58 @@ int rockchip_get_boot_mode(void)
 		printf("%s: dev_desc is NULL!\n", __func__);
 		return -ENODEV;
 	}
+
 	ret = part_get_info_by_name(dev_desc, PART_MISC,
 			&part_info);
-	if (ret < 0) {
-		printf("get part %s fail %d\n", PART_MISC, ret);
-		return -EIO;
-	}
-
-	bmsg = memalign(ARCH_DMA_MINALIGN, size);
-	ret = blk_dread(dev_desc,
-			part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
-			size >> 9, bmsg);
-	if (ret != (size >> 9)) {
-		free(bmsg);
-		return -EIO;
-	}
+	if (ret >= 0) {
+		bmsg = memalign(ARCH_DMA_MINALIGN, size);
+		ret = blk_dread(dev_desc,
+				part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
+				size >> 9, bmsg);
+		if (ret != (size >> 9)) {
+			free(bmsg);
+			return -EIO;
+		}
 
 	/* Mode from misc partition */
-	if (!strcmp(bmsg->command, "boot-recovery")) {
-		boot_mode = BOOT_MODE_RECOVERY;
-	} else {
-		/* Mode from boot mode register */
-		reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
-		writel(BOOT_NORMAL, (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
-
-		switch (reg_boot_mode) {
-		case BOOT_NORMAL:
-			printf("boot mode: normal\n");
-			boot_mode = BOOT_MODE_NORMAL;
-			break;
-		case BOOT_FASTBOOT:
-			printf("boot mode: bootloader\n");
-			boot_mode = BOOT_MODE_BOOTLOADER;
-			break;
-		case BOOT_LOADER:
-			printf("boot mode: loader\n");
-			boot_mode = BOOT_MODE_LOADER;
-			break;
-		case BOOT_RECOVERY:
-			/* printf("boot mode: recovery\n"); */
+		if (!strcmp(bmsg->command, "boot-recovery")) {
 			boot_mode = BOOT_MODE_RECOVERY;
-			break;
-		case BOOT_UMS:
-			printf("boot mode: ums\n");
-			boot_mode = BOOT_MODE_UMS;
-			break;
-		case BOOT_CHARGING:
-			printf("boot mode: charging\n");
-			boot_mode = BOOT_MODE_CHARGING;
-			break;
-		default:
-			printf("boot mode: None\n");
-			boot_mode = BOOT_MODE_UNDEFINE;
+			return boot_mode;
 		}
+	} 
+
+	/* Mode from boot mode register */
+	reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
+	writel(BOOT_NORMAL, (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
+
+	switch (reg_boot_mode) {
+	case BOOT_NORMAL:
+		printf("boot mode: normal\n");
+		boot_mode = BOOT_MODE_NORMAL;
+		break;
+	case BOOT_FASTBOOT:
+		printf("boot mode: bootloader\n");
+		boot_mode = BOOT_MODE_BOOTLOADER;
+		break;
+	case BOOT_LOADER:
+		printf("boot mode: loader\n");
+		boot_mode = BOOT_MODE_LOADER;
+		break;
+	case BOOT_RECOVERY:
+		/* printf("boot mode: recovery\n"); */
+		boot_mode = BOOT_MODE_RECOVERY;
+		break;
+	case BOOT_UMS:
+		printf("boot mode: ums\n");
+		boot_mode = BOOT_MODE_UMS;
+		break;
+	case BOOT_CHARGING:
+		printf("boot mode: charging\n");
+		boot_mode = BOOT_MODE_CHARGING;
+		break;
+	default:
+		printf("boot mode: None\n");
+		boot_mode = BOOT_MODE_UNDEFINE;
 	}
 
 	return boot_mode;
