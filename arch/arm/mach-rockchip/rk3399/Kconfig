@@ -3,6 +3,12 @@ if ROCKCHIP_RK3399
 choice
 	prompt "RK3399 board select"
 
+config TARGET_RK3399_ROC_PC
+	bool "RK3399-ROC-PC"
+	select BOARD_LATE_INIT
+	help
+		ROC-RK3399-PC (todo)
+
 config TARGET_EVB_RK3399
 	bool "RK3399 evaluation board"
 	select BOARD_LATE_INIT
@@ -38,6 +44,7 @@ config SYS_MALLOC_F_LEN
 	default 0x0800
 
 source "board/rockchip/evb_rk3399/Kconfig"
+source "board/rockchip/rk3399-roc-pc/Kconfig"
 source "board/theobroma-systems/puma_rk3399/Kconfig"
 
 endif

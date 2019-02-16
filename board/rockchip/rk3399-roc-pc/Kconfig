@@ -1,0 +1,15 @@
+if TARGET_RK3399_ROC_PC
+
+config SYS_BOARD
+	default "rk3399-roc-pc"
+
+config SYS_VENDOR
+	default "rockchip"
+
+config SYS_CONFIG_NAME
+	default "rk3399-roc-pc"
+
+config BOARD_SPECIFIC_OPTIONS # dummy
+	def_bool y
+
+endif
